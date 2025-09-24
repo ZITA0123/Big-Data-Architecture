@@ -1,0 +1,26 @@
+.kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+.kpi { background:#0f172a; color:#e2e8f0; padding: 12px; border-radius: 10px; }
+.kpi-title { color:#93c5fd; font-weight: 600; }
+.kpi-value { font-size: 20px; font-weight: 800; margin-top: 4px; }
+
+
+.topmovers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.panel { background:#0f172a; color:#e2e8f0; padding: 12px; border-radius: 10px; }
+.panel-title { color:#93c5fd; font-weight: 700; margin-bottom: 8px; }
+.bars { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+.bars li { display:grid; grid-template-columns: 90px 1fr 80px; align-items:center; gap:8px; }
+.bars .label { color:#cbd5e1; font-weight:600; }
+.bars .bar { height: 10px; border-radius: 6px; background: #1f2937; position: relative; }
+.bars .bar.pos { background: linear-gradient(90deg, #16a34a, #22c55e); }
+.bars .bar.neg { background: linear-gradient(90deg, #ef4444, #f43f5e); }
+.bars .val { text-align:right; font-variant-numeric: tabular-nums; }
+
+
+.table-wrap { background:#0f172a; border-radius: 10px; overflow:auto; }
+.ticker-table { width:100%; border-collapse: collapse; color:#e2e8f0; }
+.ticker-table thead th { position: sticky; top:0; background:#0b1220; color:#93c5fd; text-align:left; padding:8px; font-size: 12px; }
+.ticker-table tbody td { padding:6px 8px; border-top: 1px solid #1f2937; font-size: 13px; }
+.ticker-table tbody tr:hover { background:#0b1220; }
+.num { text-align:right; font-variant-numeric: tabular-nums; }
+.up { color:#22c55e; }
+.down { color:#ef4444; }
