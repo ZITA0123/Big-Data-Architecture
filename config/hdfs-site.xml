@@ -1,0 +1,35 @@
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>1</value>
+    </property>
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>file:/usr/local/hadoop/hdfs/namenode</value>
+    </property>
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>file:/usr/local/hadoop/hdfs/datanode</value>
+    </property>
+    <property>
+        <name>dfs.namenode.rpc-address</name>
+        <value>namenode_hostname:8020</value>
+    </property>
+
+    <!-- Mes modifications -->
+    <property>
+        <name>fs.checkpoint.dir</name>
+        <value>file:/hadoop/dfs/namesecondary</value>
+    </property>
+
+    <property>
+        <name>fs.checkpoint.period</name>
+        <value>3600</value> <!-- 1 checkpoint chaque heure -->
+    </property>
+
+    <property>
+        <name>fs.checkpoint.txns</name>
+        <value>1000000</value> <!-- Checkpoint si 1M transactions -->
+    </property>
+
+</configuration>
