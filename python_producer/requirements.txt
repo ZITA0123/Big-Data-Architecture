@@ -1,0 +1,10 @@
+hdfs==2.6.0
+kafka-python
+requests
+openmeteo-requests
+requests-cache
+retry-requests
+numpy
+pandas
+
+
