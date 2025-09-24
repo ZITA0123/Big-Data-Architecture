@@ -150,17 +150,15 @@ flask-api:
     volumes:
       - ./api_flask:/app
 
-react-front:
+front-streaming:
     build:
-      context: ./react_front
-    container_name: react-front
+      context: ./front-streaming
+    container_name: front-streaming
     ports:
       - "3000:3000"
     volumes:
-      - ./react_front:/app
+      - ./front-streaming:/app
       - /app/node_modules
-    depends_on:
-      - flask-api
 
 volumes:
   hadoop_namenode:
