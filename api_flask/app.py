@@ -5,9 +5,44 @@ from flask_cors import CORS
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, min as spark_min, max as spark_max
 from pyspark.sql.types import StructType, StructField, LongType, StringType, DoubleType, IntegerType
+from datetime import datetime
+from hdfs import InsecureClient
+from datetime import datetime, timedelta
+import json
+
 
 app = Flask(__name__)
 CORS(app)
+
+# Connexion au HDFS
+client = InsecureClient('http://namenode:9870', user='root')
+
+
+def get_klines(symbol, start_date, end_date):
+
+    # Liste pour stocker les résultats
+    result = []
+
+    start_date = datetime.strptime(start_date, "%d-%m-%Y")
+    end_date = datetime.strptime(end_date, "%d-%m-%Y")
+
+    # Parcourir chaque jour entre start et end
+    current = start_date
+    while current <= end_date:
+        date_str = current.strftime("%d-%m-%Y")
+        hdfs_file_path = f"{symbol}/{date_str}.json"
+        
+        try:
+            with client.read(hdfs_file_path, encoding='utf-8') as reader:
+                data = json.load(reader)
+                result.append(data)
+                print(f"✅ {hdfs_file_path} lu avec succès")
+        except Exception as e:
+            print(f"⚠️  Fichier non trouvé ou erreur : {hdfs_file_path} - {e}")
+        
+        current += timedelta(days=1)
+    return result
+
 
 # Initialiser SparkSession (une seule fois au démarrage)
 spark = SparkSession.builder \
@@ -15,55 +50,23 @@ spark = SparkSession.builder \
     .master("local[*]") \
     .getOrCreate()
 
-BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines"
 
-def get_transformed_klines(symbol, interval, start_time=None, end_time=None):
-    params = {
-        "symbol": symbol,
-        "interval": interval
-    }
-    if start_time is not None:
-        params["startTime"] = start_time
-    if end_time is not None:
-        params["endTime"] = end_time
 
-    resp = requests.get(BINANCE_KLINES_URL, params=params)
-    if resp.status_code != 200:
-        return None, {"error": "Erreur API Binance", "status_code": resp.status_code, "text": resp.text}
+ 
 
-    data = resp.json()
-    # Transformer chaque kline en dict
-    def transform_kline(kline):
-        return {
-            "open_time": kline[0],
-            "open_price": float(kline[1]),
-            "high_price": float(kline[2]),
-            "low_price": float(kline[3]),
-            "close_price": float(kline[4]),
-            "volume": float(kline[5]),
-            "close_time": kline[6],
-            "quote_asset_volume": float(kline[7]),
-            "num_trades": int(kline[8]),
-            "taker_buy_base_volume": float(kline[9]),
-            "taker_buy_quote_volume": float(kline[10]),
-            # on ignore kline[11]
-        }
-    transformed = [transform_kline(k) for k in data]
-    return transformed, None
+
 
 @app.route('/klines', methods=['GET'])
 def klines_route():
     symbol = request.args.get('symbol')
-    interval = request.args.get('interval')
-    start_time = request.args.get('startTime', type=int)
-    end_time = request.args.get('endTime', type=int)
+    start_date = request.args.get('start', type=str)
+    end_date = request.args.get('end', type=str)
 
-    if not symbol or not interval:
-        return jsonify({"error": "symbol et interval sont requis"}), 400
+    if not symbol:
+        return jsonify({"error": "symbol est requis"}), 400
 
-    transformed, err = get_transformed_klines(symbol, interval, start_time, end_time)
-    if err:
-        return jsonify(err), err.get("status_code", 500)
+    transformed = get_klines(symbol, start_date, end_date)
+
 
     # Si pas de données, renvoyer vide
     if not transformed:
@@ -71,13 +74,13 @@ def klines_route():
 
     # Définir un schéma Spark (optionnel, mais aide)
     schema = StructType([
-        StructField("open_time", LongType(), True),
+        StructField("open_time", StringType(), True),
         StructField("open_price", DoubleType(), True),
         StructField("high_price", DoubleType(), True),
         StructField("low_price", DoubleType(), True),
         StructField("close_price", DoubleType(), True),
         StructField("volume", DoubleType(), True),
-        StructField("close_time", LongType(), True),
+        StructField("close_time", StringType(), True),
         StructField("quote_asset_volume", DoubleType(), True),
         StructField("num_trades", IntegerType(), True),
         StructField("taker_buy_base_volume", DoubleType(), True),
