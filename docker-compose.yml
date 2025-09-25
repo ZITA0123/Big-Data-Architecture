@@ -137,7 +137,7 @@ services:
       - kafka
     volumes:
       - ./python_producer:/app
-flask-api:
+  flask-api:
     build:
       context: ./api_flask
     container_name: flask-api
@@ -150,14 +150,14 @@ flask-api:
     volumes:
       - ./api_flask:/app
 
-react-front:
+  front-aggregat:
     build:
-      context: ./react_front
-    container_name: react-front
+      context: ./front-aggregat
+    container_name: front-aggregat
     ports:
       - "3000:3000"
     volumes:
-      - ./react_front:/app
+      - ./front-aggregat:/app
       - /app/node_modules
     depends_on:
       - flask-api
