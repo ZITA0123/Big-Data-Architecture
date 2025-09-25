@@ -77,7 +77,7 @@ npm install
 npm run dev
 # Ouvrir http://localhost:5173
 
-Build & preview (test prod local)
+#) Build & preview (test prod local)
 
 npm run build
 npm run preview
