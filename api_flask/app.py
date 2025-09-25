@@ -1,77 +1,110 @@
-from flask import Flask, jsonify, request
-from hdfs import InsecureClient
+from flask import Flask, request, jsonify
+import requests
 from flask_cors import CORS
-import json
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, min as spark_min, max as spark_max
+from pyspark.sql.types import StructType, StructField, LongType, StringType, DoubleType, IntegerType
 
 app = Flask(__name__)
 CORS(app)
 
-# Connexion au HDFS Web UI exposé par le NameNode
-hdfs_client = InsecureClient("http://namenode:9870", user="hdfs")
+# Initialiser SparkSession (une seule fois au démarrage)
+spark = SparkSession.builder \
+    .appName("FlaskSparkKlines") \
+    .master("local[*]") \
+    .getOrCreate()
 
-def read_json_folder(folder_path):
-    try:
-        files = hdfs_client.list(folder_path)
-        all_data = []
-        for f in files:
-            if f.endswith(".json") or f.startswith("part-"):
-                with hdfs_client.read(f"{folder_path}/{f}") as reader:
-                    for line in reader:
-                        if line.strip():
-                            all_data.append(json.loads(line))
-        return all_data
-    except Exception as e:
-        return {"error": str(e)}
+BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines"
 
+def get_transformed_klines(symbol, interval, start_time=None, end_time=None):
+    params = {
+        "symbol": symbol,
+        "interval": interval
+    }
+    if start_time is not None:
+        params["startTime"] = start_time
+    if end_time is not None:
+        params["endTime"] = end_time
 
-# Objets détectés (bruts) avec pagination
-@app.route("/objects", methods=["GET"])
-def get_paginated_objects():
-    page = int(request.args.get("page", 1))
-    limit = int(request.args.get("limit", 100))
+    resp = requests.get(BINANCE_KLINES_URL, params=params)
+    if resp.status_code != 200:
+        return None, {"error": "Erreur API Binance", "status_code": resp.status_code, "text": resp.text}
 
-    all_data = read_json_folder("/objects")
-    total = len(all_data)
+    data = resp.json()
+    # Transformer chaque kline en dict
+    def transform_kline(kline):
+        return {
+            "open_time": kline[0],
+            "open_price": float(kline[1]),
+            "high_price": float(kline[2]),
+            "low_price": float(kline[3]),
+            "close_price": float(kline[4]),
+            "volume": float(kline[5]),
+            "close_time": kline[6],
+            "quote_asset_volume": float(kline[7]),
+            "num_trades": int(kline[8]),
+            "taker_buy_base_volume": float(kline[9]),
+            "taker_buy_quote_volume": float(kline[10]),
+            # on ignore kline[11]
+        }
+    transformed = [transform_kline(k) for k in data]
+    return transformed, None
 
-    start = (page - 1) * limit
-    end = start + limit
-    paginated = all_data[start:end]
+@app.route('/klines', methods=['GET'])
+def klines_route():
+    symbol = request.args.get('symbol')
+    interval = request.args.get('interval')
+    start_time = request.args.get('startTime', type=int)
+    end_time = request.args.get('endTime', type=int)
 
-    return jsonify({
-        "page": page,
-        "limit": limit,
-        "total": total,
-        "pages": (total + limit - 1) // limit,  # nombre total de pages
-        "data": paginated
-    })
+    if not symbol or not interval:
+        return jsonify({"error": "symbol et interval sont requis"}), 400
 
-#objets par type
-@app.route("/objects/type", methods=["GET"])
-def get_all_types_grouped():
-    try:
-        type_folders = hdfs_client.list("/objectsType")
-        grouped_data = {}
-        for type_name in type_folders:
-            type_data = read_json_folder(f"/objectsType/{type_name}")
-            grouped_data[type_name] = type_data
-        return jsonify(grouped_data)
-    except Exception as e:
-        return jsonify({"error": str(e)})
-    
-# Statistiques par type d’objet céleste
-@app.route("/objects/count", methods=["GET"])
-def get_type_stats():
-    return jsonify(read_json_folder("/objects/type"))
+    transformed, err = get_transformed_klines(symbol, interval, start_time, end_time)
+    if err:
+        return jsonify(err), err.get("status_code", 500)
 
-#Top 5 des objets les plus rapides
-@app.route("/objects/top5", methods=["GET"])
-def get_top5_objects():
-    return jsonify(read_json_folder("/objects/top5"))
+    # Si pas de données, renvoyer vide
+    if not transformed:
+        return jsonify({"data": [], "min_price": None, "max_price": None})
 
-#Objets dangereux (alertes)
-@app.route("/alerts", methods=["GET"])
-def get_alerts():
-    return jsonify(read_json_folder("/alerts"))
+    # Définir un schéma Spark (optionnel, mais aide)
+    schema = StructType([
+        StructField("open_time", LongType(), True),
+        StructField("open_price", DoubleType(), True),
+        StructField("high_price", DoubleType(), True),
+        StructField("low_price", DoubleType(), True),
+        StructField("close_price", DoubleType(), True),
+        StructField("volume", DoubleType(), True),
+        StructField("close_time", LongType(), True),
+        StructField("quote_asset_volume", DoubleType(), True),
+        StructField("num_trades", IntegerType(), True),
+        StructField("taker_buy_base_volume", DoubleType(), True),
+        StructField("taker_buy_quote_volume", DoubleType(), True),
+    ])
+
+    # Créer DataFrame Spark
+    df = spark.createDataFrame(transformed, schema=schema)
+
+    # Calculer le prix le plus bas et le plus haut — selon ce que tu veux utiliser (low_price, high_price, close_price, etc.)
+    agg_res = df.agg(
+        spark_min(col("low_price")).alias("min_low_price"),
+        spark_max(col("high_price")).alias("max_high_price")
+    ).collect()[0]
+
+    min_low = agg_res["min_low_price"]
+    max_high = agg_res["max_high_price"]
+
+    # Préparer la réponse JSON
+    response = {
+        "data": transformed,
+        "min_low_price": min_low,
+        "max_high_price": max_high
+    }
+
+    return jsonify(response)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
