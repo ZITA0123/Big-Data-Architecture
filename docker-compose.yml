@@ -137,7 +137,7 @@ services:
       - kafka
     volumes:
       - ./python_producer:/app
-flask-api:
+  flask-api:
     build:
       context: ./api_flask
     container_name: flask-api
@@ -150,7 +150,7 @@ flask-api:
     volumes:
       - ./api_flask:/app
 
-react-front:
+  react-front:
     build:
       context: ./react_front
     container_name: react-front
