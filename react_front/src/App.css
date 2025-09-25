@@ -1,6 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+.crypto-table {
+  font-family: 'Roboto', sans-serif;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
+  font-family: 'Roboto', sans-serif;
+  background-color: #f4f4f9;
   margin: 0;
   padding: 0;
 }
@@ -14,40 +20,59 @@ body {
   border-radius: 10px;
 }
 
-h1 {
+.app-title {
   text-align: center;
   color: #222;
   margin-bottom: 30px;
 }
 
-h2 {
-  margin-top: 40px;
-  margin-bottom: 15px;
-  font-size: 24px;
-  color: #333;
+.search-bar {
   display: flex;
   align-items: center;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
   margin-bottom: 20px;
 }
 
-table th,
-table td {
+.search-icon {
+  margin-right: 10px;
+  color: #888;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
   border: 1px solid #ccc;
-  padding: 10px 12px;
+  border-radius: 5px;
+}
+
+/* Styles pour le tableau */
+.crypto-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.crypto-table th {
+  background-color: #007bff; /* Couleur bleue */
+  color: white; /* Écriture blanche */
+  padding: 10px;
   text-align: left;
-  font-size: 20px;
+  font-size: 14px;
 }
 
-th {
-  background-color: #f1f1f1;
-  font-weight: bold;
+.crypto-table td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  font-size: 14px;
 }
 
+.crypto-table tr:nth-child(even) {
+  background-color: #f9f9f9; /* Couleur de fond pour les lignes paires */
+}
+
+.crypto-table tr:hover {
+  background-color: #f1f1f1; /* Couleur de survol */
+}
 .alert-box {
   background-color: #ffe0e0;
   color: #a30000;
@@ -66,4 +91,56 @@ select {
   margin-bottom: 20px;
   border: 1px solid #ccc;
   border-radius: 5px;
+}
+
+.search-results {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.search-results li {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.search-results li:hover {
+  background-color: #f1f1f1;
+}
+
+.search-results li:last-child {
+  border-bottom: none;
+}
+
+/* Pagination styles */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.pagination button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  margin: 0 5px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.pagination span {
+  margin: 0 10px;
+  font-size: 16px;
 }

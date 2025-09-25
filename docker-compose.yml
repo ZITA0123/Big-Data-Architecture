@@ -150,14 +150,14 @@ services:
     volumes:
       - ./api_flask:/app
 
-  front-aggregat:
+  react-front:
     build:
-      context: ./front-aggregat
-    container_name: front-aggregat
+      context: ./react_front
+    container_name: react-front
     ports:
       - "3000:3000"
     volumes:
-      - ./front-aggregat:/app
+      - ./react_front:/app
       - /app/node_modules
     depends_on:
       - flask-api
