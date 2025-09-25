@@ -20,7 +20,7 @@ def add_data(symbol, data_list):
         hdfs_path = os.path.join(hdfs_dir, filename)
 
 
-        with client.write(hdfs_path, encoding='utf-8', overwrite=True) as writer:
+        with client.write(hdfs_path, encoding='utf-8', overwrite=True, blocksize=1024*1024) as writer:
             json.dump(data, writer)
             print(f"✅ {hdfs_path} écrit avec succès")
 
@@ -65,8 +65,11 @@ def get_transformed_klines(symbol, interval, start_time=None, end_time=None):
     return transformed, None
 
 
-transformed, err = get_transformed_klines("BTCUSDT", "1d", 1617235200000, 1635763200000)
-if err:
-    print(err)
-else:
-    add_data("BTCUSDT", transformed)
+def data_year(symbol):
+    transformed, err = get_transformed_klines(symbol, "1d", 1727189129000, 1758725129000)
+    if err:
+        print(err)
+    else:
+        add_data(symbol, transformed)
+
+data_year("BTCUSDT")

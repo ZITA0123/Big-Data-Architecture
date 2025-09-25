@@ -30,7 +30,7 @@ def get_klines(symbol, start_date, end_date):
     current = start_date
     while current <= end_date:
         date_str = current.strftime("%d-%m-%Y")
-        hdfs_file_path = f"{symbol}/{date_str}.json"
+        hdfs_file_path = f"/data/{symbol}/{date_str}.json"
         
         try:
             with client.read(hdfs_file_path, encoding='utf-8') as reader:
