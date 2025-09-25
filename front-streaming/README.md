@@ -39,6 +39,7 @@
 > Remarque : ces KPIs sont **instantanés** (pas d’historique/agrégation côté app).
 
 ## 6) Structure du projet
+
 front-streaming/
 ├─ index.html
 ├─ package.json
